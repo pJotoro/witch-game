@@ -39,7 +39,7 @@ Tasks:
     #include <emscripten/emscripten.h>      // Emscripten library
 #endif
 
-#include "cJson.h"
+// #include "cJson.h"
 
 #include <stdio.h>                          // Required for: printf()
 #include <stdlib.h>                         // Required for: 
@@ -53,6 +53,12 @@ Tasks:
 #else
     #define LOG(...)
 #endif
+
+typedef struct Vector2i
+{
+    int x;
+    int y;
+} Vector2i;
 
 //#pragma pack(push, 1)
 //
@@ -69,11 +75,6 @@ Tasks:
 //#endif
 //} ASE_String;
 //
-//typedef struct Vector2i
-//{
-//	int x;
-//	int y;
-//} Vector2i;
 //
 //typedef Vector2i ASE_Point;
 //typedef Vector2i ASE_Size;
@@ -420,10 +421,10 @@ Tasks:
 // static ASE_Result ASE_LoadSprite(Context* ctx, char* path, Arena* arena);
 
 typedef enum { 
-    SCREEN_LOGO = 0, 
-    SCREEN_TITLE, 
-    SCREEN_GAMEPLAY, 
-    SCREEN_ENDING
+    GameScreen_Logo, 
+    GameScreen_Title, 
+    GameScreen_Gameplay, 
+    GameScreen_Ending,
 } GameScreen;
 
 // https://www.gingerbill.org/article/2019/02/08/memory-allocation-strategies-002/
@@ -585,18 +586,50 @@ typedef enum {
 //	stack->curr_offset = 0;
 //}
 
+typedef struct {
+    Rectangle src;
+    int frame_count;
+} Sprite;
+
+typedef struct Sprites {
+    Sprite witch_idle;
+} Sprites;
+
+static void DrawSprite(Texture2D atlas, Sprite* sprite, Vector2 position, int frame_idx, Color tint) {
+	// assert(sprite->frame_count > 0);
+	// assert(frame_idx >= 0 && frame_idx < sprite->frame_count);
+	float frame_width = sprite->src.width / (float)sprite->frame_count;
+	Rectangle src = {
+		.x = sprite->src.x + frame_width * (float)frame_idx,
+		.y = sprite->src.y,
+		.width = frame_width,
+		.height = sprite->src.height,
+	};
+	DrawTexturePro(atlas, src, (Rectangle) { position.x, position.y, src.width, src.height }, (Vector2) { 0.0f, 0.0f }, 0.0f, tint);
+}
+
 typedef struct Context {
-    int frameCounter;
+    GameScreen screen;
+    int frame_counter;
+    Sprites sprites;
+    Texture2D atlas;
 } Context;
 
-#define SCREEN_WIDTH 720
-#define SCREEN_HEIGHT 720
+#define WIDTH 720
+#define HEIGHT 720
 
 static void UpdateDrawFrame(Context*);      // Update and Draw one frame
 
-int main(void)
-{
+int main(void) {
     Context ctx = { 0 };
+    ctx.sprites.witch_idle = (Sprite){
+        .src = (Rectangle){33.0f, 641.0f, 96.0f-33.0f, 671.0f-641.0f},
+        .frame_count = 4,
+    };
+
+	
+
+    ctx.screen = GameScreen_Gameplay;
 
 #if !defined(_DEBUG)
     SetTraceLogLevel(LOG_NONE);         // Disable raylib trace log messages
@@ -604,7 +637,9 @@ int main(void)
 
     // Initialization
     //--------------------------------------------------------------------------------------
-    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "raylib gamejam template");
+    InitWindow(WIDTH, HEIGHT, "raylib gamejam template");
+
+    ctx.atlas = LoadTexture("C:/raylib-gamejam-template/assets/atlas.png");
     
     // TODO: Load resources / Initialize variables at this point
 
@@ -648,21 +683,39 @@ static void UpdateDrawFrame(Context* ctx)
     {
         ClearBackground(RAYWHITE);
 
-        // TODO: Draw your game screen here
+        switch (ctx->screen) {
+        case GameScreen_Logo:
+            // TODO: Draw your game screen here
 
-        DrawRectangle(70, 90, 200, 200, BLACK);
-        DrawRectangle(70 + 16, 90 + 16, 200 - 32, 200 - 32, RAYWHITE);
-        DrawText("raylib", 70 + 200 - MeasureText("raylib", 40) - 32, 90 + 200 - 40 - 24, 40, BLACK);
+            DrawRectangle(70, 90, 200, 200, BLACK);
+            DrawRectangle(70 + 16, 90 + 16, 200 - 32, 200 - 32, RAYWHITE);
+            DrawText("raylib", 70 + 200 - MeasureText("raylib", 40) - 32, 90 + 200 - 40 - 24, 40, BLACK);
 
-        DrawText("6.x", 290, 90 - 26, 280, BLACK);
-        DrawText("GAMEJAM", 70, 90 + 210, 120, MAROON);
+            DrawText("6.x", 290, 90 - 26, 280, BLACK);
+            DrawText("GAMEJAM", 70, 90 + 210, 120, MAROON);
 
-        if ((ctx->frameCounter / 20) % 2) DrawText("are you ready?", 160, 500, 50, BLACK);
+            if ((ctx->frame_counter / 20) % 2) DrawText("are you ready?", 160, 500, 50, BLACK);
 
-        DrawRectangleLinesEx((Rectangle) { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT }, 16, BLACK);
+            DrawRectangleLinesEx((Rectangle) { 0, 0, WIDTH, HEIGHT }, 16, BLACK);
 
-        // TODO: Draw everything that requires to be drawn at this point, maybe UI?
+            // TODO: Draw everything that requires to be drawn at this point, maybe UI?
+            break;
 
+        case GameScreen_Gameplay:
+            static int tick = 0;
+            static int frame_idx = 0;
+            ++tick;
+			if (tick > 10) {
+				tick = 0;
+				frame_idx += 1;
+				if (frame_idx >= ctx->sprites.witch_idle.frame_count) {
+					frame_idx = 0;
+				}
+			}
+			DrawSprite(ctx->atlas, &ctx->sprites.witch_idle, (Vector2) { 100.0f, 100.0f }, frame_idx, WHITE);
+        }
+
+        
     }
     EndDrawing();
     //----------------------------------------------------------------------------------
