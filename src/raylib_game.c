@@ -9,6 +9,28 @@
 *
 ********************************************************************************************/
 
+/*
+Tasks:
+- Manually record all necessary info about each sprite in an array.
+- Write function to draw sprite based on the info in the array.
+- Store and load levels in the dumbest way possible. Just make a text file storing shit like A B or C or whatever, where each letter basically represents a different tile or entity or whatever. The fact is, you don't really need the flexibility of LDTK for this, so why bother? You could use it for a future game jam.
+- Implement basic player movement and attacking (you will play as the knight).
+- Implement the witch. If the witch sees you, then:
+    - If the witch is far away from you, then:
+        - It should get on its broom stick and fly towards you.
+        - If it slams into you, then you both take damage. If it slams into a wall, then only it takes damage.
+    - If the witch is close to you, then:
+        - It should walk away from you so that way it can get onto its broom stick.
+- Implement the goblin. If the goblin sees you, then:
+    - It should start shooting at you.
+    - If you go out of range for long enough, then it should just reenter its idle state.
+- Implement the skeleton and the slime. They will both work the same way, except maybe the skeleton will be immune to fire? Basically they will work like the goblin except they use melee attacks instead of ranged attacks.
+- Implement spikes. When you walk on spikes, you die instantly.
+- And so on. You can add more to this as you go, assuming you have time. I will start implementing all of this tomorrow.
+- Change README.
+- 
+*/
+
 #include "raylib.h"
 #include "raymath.h"
 #include "raygui.h"
